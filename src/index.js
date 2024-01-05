@@ -1,7 +1,6 @@
 // const AgonesSDK = require('@google-cloud/agones-sdk');
 const util = require('util');
 // const axios = require('axios')
-const crypto = require('crypto')
 var StateMachine = require('javascript-state-machine');
 var udp = require('dgram');
 
@@ -18,20 +17,9 @@ const gameModes = [
 	"TDM",
 	"CTF"
 ];
-const DEFAULT_TIMEOUT = 60;
-const MAX_TIMEOUT = 2147483;
 const DEFAULT_HEALTH_TOTAL = 100;
 const TDM_WINNING_KILL_COUNT = 10;
-const MATCH_SIZE = 1
-const RESPAWN_TIME = 3000;
-
-//exp change amounts
-const WON_GAME_EXP = 5;
-const LOST_GAME_EXP = -2;
-const spacePiratesBackendAPIURL = "https://spacedroids.uc.r.appspot.com/";
-//const spacePiratesBackendAPIURL = "http://localhost:8080/";
-const spacePiratesUsersResource = "users/";
-const spacePiratesExperienceResource = "/experience";
+const MATCH_SIZE = 2
 
 //player's id is their index
 var players = [];
@@ -43,7 +31,6 @@ var score = {
 };
 //this could be TDM, CTF or other gamemodes we add down the line.
 var gameMode = "TDM";
-const sleep = util.promisify(setTimeout);
 // let agonesSDK = new AgonesSDK();
 
 //******************/
@@ -183,6 +170,9 @@ server.on('message', function (msg, info)
 				// position/rotation update
                 const newPosMsg = getResponseObj(13, msgJSON.playerIdx, msgJSON.content);
                 sendToAll(newPosMsg);
+            case 10:
+                const stopAttackingMsg = getResponseObj(14, msgJSON.playerIdx, "");
+                sendToAll(stopAttackingMsg);
 		}
 	}
 	catch (error)
@@ -695,11 +685,6 @@ async function TDMGameOverHandler (responseObj)
 	}
 }
 
-function setGameMode (inputGameMode)
-{
-	gameMode = inputGameMode;
-}
-
 function getResponseObj (opCode, playerIdx, content)
 {
 	var responseObj = {};
@@ -745,67 +730,6 @@ function getPlayersData ()
 	return players.map(getPlayerData);
 }
 
-function updatePlayersExperience (winningTeam, loosingTeam)
-{
-	const playersData = getPlayersData();
-	for (const player of playersData)
-	{
-		let expChangeAmount;
-		if (winningTeam === player.team)
-		{
-			expChangeAmount = WON_GAME_EXP;
-		}
-		else if (loosingTeam === player.team)
-		{
-			expChangeAmount = LOST_GAME_EXP;
-		}
-		updatePlayerExperience(
-			player.playerApiId,
-			player.sessionToken,
-			expChangeAmount
-		)
-	}
-}
-
-function updatePlayerExperience (playerApiId, playerSessionToken, expChangeAmount)
-{
-	try
-	{	
-		const reqBody = {
-			expChangeAmount: expChangeAmount
-		};
-
-		//we use this hash to identify that this is a gameserver that has the right to do this
-		const sigHash = crypto.createHmac('sha256', process.env.EXP_UPDATE_SECRET)
-			.update(JSON.stringify(reqBody))
-			.digest('base64')
-
-		const url = spacePiratesBackendAPIURL + 
-					spacePiratesUsersResource + 
-					playerApiId + 
-					spacePiratesExperienceResource;
-
-		const config = {
-			headers: {
-				token: playerSessionToken,
-				signature: sigHash
-			}
-		};
-
-		axios.patch(url, reqBody, config)
-			.then(function (response) {
-				console.log(response);
-			})
-			.catch(function (error) {
-				console.log(error);
-			});
-	}
-	catch (error)
-	{
-		console.log(error)
-	}
-}
-
 server.on('listening', function ()
 {
   var address = server.address();
@@ -814,29 +738,6 @@ server.on('listening', function ()
   var ipaddr = address.address;
   console.log('Server is listening at port ' + port);
   console.log('Server ip :' + ipaddr);
-  // console.log('Server is IP4/IP6 : ' + family);
 });
 
 server.bind(7654, '0.0.0.0');
-
-//gonna ignore agones for now.
-
-// const connect = async (timeout) => {
-// 	console.log('test msg')
-// 	console.log(`Connecting to the SDK server...`);
-// 	//agonesSDK is a globul
-// 	try
-// 	{
-// 		await agonesSDK.connect();
-// 		setInterval(() => {
-// 			agonesSDK.health();
-// 		}, 2000);
-// 		await agonesSDK.ready();
-// 	}
-// 	catch (error)
-// 	{
-// 		console.error(error);
-// 	}
-// }
-
-// connect(DEFAULT_TIMEOUT);
