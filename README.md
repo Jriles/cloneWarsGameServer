@@ -13,6 +13,6 @@ This is the server for a game you can find here: https://alexanderriley.itch.io/
 ### run the container
 > docker run -p 7654:7654 -p 7654:7654/udp -e MATCH_SIZE=1 server
 
-Where match size is the desired match size. There is no limit currently, but I haven't tested the server with more than three clients.
+Where MATCH_SIZE is the desired number of players in a match. There is no limit currently, but I haven't tested the server with more than three clients.
 
 Follow instructions in game/in the link above to connect to server from the game client.
