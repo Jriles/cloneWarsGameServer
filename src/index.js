@@ -19,7 +19,7 @@ const gameModes = [
 ];
 const DEFAULT_HEALTH_TOTAL = 100;
 const TDM_WINNING_KILL_COUNT = 10;
-const MATCH_SIZE = 2
+const MATCH_SIZE = process.env.MATCH_SIZE || 2;
 
 //player's id is their index
 var players = [];
@@ -732,12 +732,11 @@ function getPlayersData ()
 
 server.on('listening', function ()
 {
-  var address = server.address();
-  var port = address.port;
-  // var family = address.family;
-  var ipaddr = address.address;
-  console.log('Server is listening at port ' + port);
-  console.log('Server ip :' + ipaddr);
-});
+  var address = server.address()
+  var port = address.port
+  var ipaddr = address.address
+  console.log('Server is listening at port ' + port)
+  console.log('Server ip :' + ipaddr)
+})
 
-server.bind(7654, '0.0.0.0');
+server.bind(7654, '0.0.0.0')
